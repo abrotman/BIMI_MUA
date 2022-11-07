@@ -8,7 +8,7 @@ area = "Applications"
 workgroup = ""
 keyword = [""]
 
-date = 2022-10-25T00:00:00Z
+date = 2022-11-06T00:00:00Z
 
 [seriesInfo]
 name="RFC"
@@ -27,31 +27,30 @@ organization="Comcast, Inc"
 
 .# Abstract
 
-
-A method by which the receiving MTA may pass some information to the
-user MUA, and validate that information was added by the receiving
-system.
-
+This document describes a method by which a receiving MTA may insert Brand 
+Indicators for Message Identification (BIMI) headers into a message in such 
+a way that a third party MUA can not only use the information in those 
+headers but also validate that the headers were inserted by the MTA. 
 
 {mainmatter}
 
 # Introduction
 
-   Branded Indicators for Message Identifcation (BIMI) is meant to work
-   in a situation where the MUA is independent of the receiving entity,
-   otherwise known as a third-party email client.  When doing so, it is
-   important that the MUA is able to validate any information provided
-   to it by the receiver (or MBP).
+Brand Indicators for Message Identification (BIMI) describes a method to enable
+Domain Owners to coordinate with Mailbox Providers (MBPs), Mail Transfer 
+Agents (MTAs), and Mail User Agents (MUAs) in the display of brand-specific 
+Indicators (e.g., logos) next to properly authenticated messages.
 
-   As noted in the primary BIMI document, the MBP may add two headers,
-   BIMI-Location and BIMI-Indicator.  It is understood that a BIMI-aware
-   receiver will remove these headers if they exist upon message
-   arrival.  However, an independent MUA may need some additional
-   assurances that these headers were added by the entity responsible
-   for their mailbox storage.
+BIMI has no requirement that the MTA and MUA be operated by the same entity. 
+BIMI defines two headers, BIMI-Location and BIMI-Indicator, to be inserted 
+into a properly authenticated message so that any MUA that supports BIMI can 
+display the message with the BIMI logo. However, BIMI does not define a 
+method that allows the MUA to verify that the headers were inserted by the 
+MTA that wrote the message to the message store from which the MUA is 
+retrieving the message.
 
-   Below is a method to cryptographically sign these data points, as
-   well as some other identifying information.
+This document describes such a verification method.  
+
 
 # Validation Information
 
@@ -77,38 +76,64 @@ An example might be:
 BIMI-Receiver-Information: date: Tue, 25 Oct 2022 01:05:55 +0000 ; \
   rcpt: 6d9010b2b7a1483b256ae7477738dba7c530bd9ba53db1d6691441e74b83608a@isp.net
 
-# Signature
+# BIMI-Receiver-Signature
 
-To provide a higher level of assurance, the MBP should also now sign these 
-three headers.  The system should use a DKIM-based [@!RFC6376] method as a 
-system might also use when signing outbound messages.
+The MTA or other entity that performed the BIMI validation of the message 
+MUST, if the message passed all BIMI validation checks, insert a 
+BIMI-Receiver-Signature header constructed in a manner consistent with the 
+creation of a DKIM-Signature header as defined in [RFC6376]. This header 
+MUST include all the BIMI-Location, BIMI-Selector, and 
+BIMI-Receiver-Information headers as headers that were signed by this 
+signature. 
 
-The selector stated in the header is formed by joining the selector used 
-during signing, along with prefixing the sending domain.
+This signature will be validated by the MUA in the same manner that a 
+DKIM-Signature header is validated, and successful validation of this header 
+will indicate that the signing domain inserted the signed headers. 
 
-BIMI-Receiver-Signature: s=marketing.example.org.asdf1234;d=isp.net;p=<SIGNATURE_BLOB>
+The public key to support this signing activity will be published in the DNS 
+at a location one or more levels below the name "_bimi.signingDomain". For 
+example, an MBP named "isp.net" might publish its public key at 
+"sel_sign._bimi.isp.net". For the purposes of this document, we will refer 
+to "sel_sign" as the "True Selector".
+
+
+The selector specified in the s= tag of this signature will be a 
+pseudo-selector constructed by prepending the full domain from the 
+RFC5322.From header to the "True Selector". In the INFORMATIVE EXAMPLE of a 
+BIMI-Receiver-Signature header shown below, the s= tag is assigned the value 
+"marketing.example.org.sel_sign", which means that the RFC5322.From header 
+for the message contained the domain "marketing.example.org".  
+
+BIMI-Receiver-Signature: v=BIMI1; d=isp.net; s=marketing.example.org.sel_sign; 
+c=canonicalization; h=BIMI-Location:BIMI-Selector:BIMI-Reciever-Information;
+b=<SIGNATURE_BLOB>; t=timestamp
 
 ## Public Key Publishing
 
-In order to avoid pubishing thousands of DKIM keys, the receiver should add 
-the DKIM public key record as a TXT record, and then create a default 
-sub-record response as a wildcard response to match that same TXT record.
+While the above method describing "pseudo-selectors" might seem to require 
+that isp.net publish an infinite number of DKIM public keys in order to 
+support validation of its BIMI-Receiver-Signature headers, that is not the 
+case. Instead, validation of these signature headers will rely on publishing 
+a DNS wildcard record, while revocation of BIMI logos will rely on the 
+publishing of empty records to match the domains for which the MBP no longer 
+wishes to support validation of BIMI logos.
 
-In the case where the sending domain is "example.net", the receiving domain 
-is "isp.net", and the selector is "sel_sign", the records would appear as 
-below:
+As mentioned in the previous section, the MBP will publish its public key 
+for supporting validation of BIMI-Receiver-Signatures at the name 
+matching this pattern:
 
-sel_sign._bimi.isp.net TXT "v=BIMI1;p=<public_key_data>"
+<True Selector>._bimi.<signing Domain>
 
-Though, in order to complete the query for the method defined, there
-must be a wildcard match:
+In the example above that would mean publishing a DKIM public key as follows:
 
-*.sel_sign._bimi.isp.net CNAME sel_sign._bimi.isp.net
+sel_sign._bimi.isp.net TXT "v=BIMI1; p=<public_key_data>"
 
-As noted above, this would allow the prefixed domain to continue to match
-when queried from the MUA.  And so a query against 
-"example.net.sel_sign._bimi.isp.net" would return the DKIM keys needed to
-validate the signature added by the receiving system.
+To support validation of its signatures where the selector is the 
+"pseudo-selector" described in the previous section, the MBP will also 
+publish the following DNS wildcard record:
+
+*.sel_sign._bimi.isp.net CNAME sel_sign._bimi.isp.net.
+
 
 # Revocation
 
