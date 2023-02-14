@@ -8,7 +8,7 @@ area = "Applications"
 workgroup = ""
 keyword = [""]
 
-date = 2022-11-06T00:00:00Z
+date = 2023-02-02T00:00:00Z
 
 [seriesInfo]
 name="RFC"
@@ -36,20 +36,39 @@ headers but also validate that the headers were inserted by the MTA.
 
 # Introduction
 
-Brand Indicators for Message Identification (BIMI) describes a method to enable
-Domain Owners to coordinate with Mailbox Providers (MBPs), Mail Transfer 
-Agents (MTAs), and Mail User Agents (MUAs) in the display of brand-specific 
-Indicators (e.g., logos) next to properly authenticated messages.
+Brand Indicators for Message Identification (BIMI) describes a method to 
+enable Domain Owners to coordinate with Mailbox Providers (MBPs), Mail 
+Transfer Agents (MTAs), and Mail User Agents (MUAs) in the display of 
+brand-specific Indicators (e.g., logos) next to properly authenticated 
+messages.
 
-BIMI has no requirement that the MTA and MUA be operated by the same entity. 
-BIMI defines two headers, BIMI-Location and BIMI-Indicator, to be inserted 
-into a properly authenticated message so that any MUA that supports BIMI can 
-display the message with the BIMI logo. However, BIMI does not define a 
-method that allows the MUA to verify that the headers were inserted by the 
-MTA that wrote the message to the message store from which the MUA is 
-retrieving the message.
+BIMI relies on DMARC, which in turn relies on both SPF and DKIM validation 
+for the message in question, and it is generally accepted that an MTA is best 
+positioned to do the SPF and DKIM validation that underpin DMARC, since it 
+has the cleanest access to the data necessary for such validation. An MUA 
+almost certainly cannot perform SPF validation on a message, as it will not 
+know the sending IP of the message, and an MUA could only perform DKIM 
+validation on a message if the MTA has not altered the DKIM-protected parts of 
+the message. This makes the simplest path to the display of a BIMI 
+Indicator one where the MTA performs the required checks for DMARC and BIMI 
+and records the results of those checks in a way that can be accessed by the 
+MUA.
 
-This document describes such a verification method.  
+BIMI makes no requirement that the MTA handling a message and the MUA reading 
+and displaying it be operated by the same entity. In cases where a mailbox 
+holder uses their MBP's MUA to read the contents of their mailbox, it is a 
+relatively simple matter for the MTA and MUA to interoperate in a way in 
+which the display of the BIMI Indicator can be controlled by the MBP. 
+
+What is less simple is the interoperability between an MBP's MTAs and message 
+stores and a third-party MUA. In this scenario, there must exist a standard 
+way for an MTA to communicate BIMI and DMARC validation results to the MUA in 
+a way that can be verified by the MTA. In addition, the MBP through its 
+message store must be able to indicate that a BIMI Indicator and/or its 
+Evidence Document has been revoked if circumstances require.
+
+This document describes a method for achieving interoperability between an 
+MBP's MTAs and message stores and a third-party MUA.
 
 
 # Validation Information
@@ -61,7 +80,7 @@ BIMI-related information, as well as base64-encoded SVG image file.
 Additionally, a receiver employing this method MUST add another header
 to the message, BIMI-Receiver-Information. This will contain a
 `date-time` (from [@!RFC5322]), and sha256-encoded hash from the
-loal part of the recipient, and then the `domain` (again from RFC5322)
+local part of the recipient, and then the `domain` (again from RFC5322)
 
 BIMI-Receiver-Information: date: date-time ; rcpt: sha256-local @ domain
 
@@ -105,7 +124,7 @@ BIMI-Receiver-Signature header shown below, the s= tag is assigned the value
 for the message contained the domain "marketing.example.org".  
 
 BIMI-Receiver-Signature: v=BIMI1; d=isp.net; s=marketing.example.org.sel_sign; 
-c=canonicalization; h=BIMI-Location:BIMI-Selector:BIMI-Reciever-Information;
+c=canonicalization; h=BIMI-Location:BIMI-Selector:BIMI-Receiver-Information;
 b=<SIGNATURE_BLOB>; t=timestamp
 
 ## Public Key Publishing
@@ -177,7 +196,7 @@ is `sel_sign`.
 
 * ESP sends message to MBP containing appropriate headers for BIMI usage
 * MBP performs DKIM/SPF/DMARC steps
-* Presuming prior step works properly, MBP evalutes BIMI
+* Presuming prior step works properly, MBP evaluates BIMI
 * Based on localised requirements, MBP adds headers to email
    * BIMI-Location
    * BIMI-Indicator
@@ -201,7 +220,7 @@ is `sel_sign`.
 
 * ESP sends message to MBP containing appropriate headers for BIMI usage
 * MBP performs DKIM/SPF/DMARC steps
-* Presuming prior step works properly, MBP evalutes BIMI
+* Presuming prior step works properly, MBP evaluates BIMI
 * Based on localised requirements, MBP adds headers to email
    * BIMI-Location
    * BIMI-Indicator
@@ -236,7 +255,6 @@ Authentication-Results: spf=pass marketing.example.com;
 DKIM-Signature: d=example.com;s=d_s;h=BIMI-Selector:From:To:Date:Message-Id;
   bh=<hash_data>;b=<signature_data>
 BIMI-Selector: v=BIMI1;s=our_selector
-
 
 # Contributors
 
