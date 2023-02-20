@@ -8,7 +8,7 @@ area = "Applications"
 workgroup = ""
 keyword = [""]
 
-date = 2023-02-02T00:00:00Z
+date = 2023-02-19T00:00:00Z
 
 [seriesInfo]
 name="RFC"
@@ -44,7 +44,7 @@ messages.
 
 BIMI relies on DMARC, which in turn relies on both SPF and DKIM validation 
 for the message in question, and it is generally accepted that an MTA is best 
-positioned to do the SPF and DKIM validation that underpin DMARC, since it 
+positioned to do the SPF and DKIM validation that underpin DMARC since it 
 has the cleanest access to the data necessary for such validation. An MUA 
 almost certainly cannot perform SPF validation on a message, as it will not 
 know the sending IP of the message, and an MUA could only perform DKIM 
@@ -61,14 +61,15 @@ relatively simple matter for the MTA and MUA to interoperate in a way in
 which the display of the BIMI Indicator can be controlled by the MBP. 
 
 What is less simple is the interoperability between an MBP's MTAs and message 
-stores and a third-party MUA. In this scenario, there must exist a standard 
-way for an MTA to communicate BIMI and DMARC validation results to the MUA in 
-a way that can be verified by the MTA. In addition, the MBP through its 
-message store must be able to indicate that a BIMI Indicator and/or its 
-Evidence Document has been revoked if circumstances require.
+stores and an independent, or third-party, MUA. In this scenario, there must 
+exist a standard way for an MTA to communicate BIMI and DMARC validation 
+results to the MUA in a way that can be verified by the MUA. In addition, 
+the MBP through its message store must be able to indicate that a BIMI 
+Indicator and/or its Evidence Document has been revoked if circumstances 
+require.
 
 This document describes a method for achieving interoperability between an 
-MBP's MTAs and message stores and a third-party MUA.
+MBP's MTAs and message stores, and a third-party MUA.
 
 
 # Validation Information
@@ -80,7 +81,7 @@ BIMI-related information, as well as base64-encoded SVG image file.
 Additionally, a receiver employing this method MUST add another header
 to the message, BIMI-Receiver-Information. This will contain a
 `date-time` (from [@!RFC5322]), and sha256-encoded hash from the
-local part of the recipient, and then the `domain` (again from RFC5322)
+local part of the recipient, and then the `domain` (again from RFC5322):
 
 BIMI-Receiver-Information: date: date-time ; rcpt: sha256-local @ domain
 
@@ -92,7 +93,7 @@ sha256-local: 64( HEXDIG )
 
 An example might be:
 
-BIMI-Receiver-Information: date: Tue, 25 Oct 2022 01:05:55 +0000 ; \
+BIMI-Receiver-Information: date: Tue, 25 Feb 2023 01:05:55 +0000 ; \
   rcpt: 6d9010b2b7a1483b256ae7477738dba7c530bd9ba53db1d6691441e74b83608a@isp.net
 
 # BIMI-Receiver-Signature
@@ -107,14 +108,13 @@ signature.
 
 This signature will be validated by the MUA in the same manner that a 
 DKIM-Signature header is validated, and successful validation of this header 
-will indicate that the signing domain inserted the signed headers. 
+will indicate that the receiving domain inserted the signed headers. 
 
 The public key to support this signing activity will be published in the DNS 
 at a location one or more levels below the name "_bimi.signingDomain". For 
 example, an MBP named "isp.net" might publish its public key at 
 "sel_sign._bimi.isp.net". For the purposes of this document, we will refer 
 to "sel_sign" as the "True Selector".
-
 
 The selector specified in the s= tag of this signature will be a 
 pseudo-selector constructed by prepending the full domain from the 
@@ -126,6 +126,12 @@ for the message contained the domain "marketing.example.org".
 BIMI-Receiver-Signature: v=BIMI1; d=isp.net; s=marketing.example.org.sel_sign; 
 c=canonicalization; h=BIMI-Location:BIMI-Selector:BIMI-Receiver-Information;
 b=<SIGNATURE_BLOB>; t=timestamp
+
+The public key used for validation by the MUA would be:
+
+`marketing.example.org.sel_sign._bimi.isp.net`
+
+The mechanics of the public key publishing are covered in sections below.
 
 ## Public Key Publishing
 
@@ -153,43 +159,102 @@ publish the following DNS wildcard record:
 
 *.sel_sign._bimi.isp.net CNAME sel_sign._bimi.isp.net.
 
+When the MUA performs a lookup, the wildcard MUST match and provide
+the MUA with the proper public key to validate the signature.
+
+# MUA Validation
+
+As with DKIM, the MUA will use the cryptographic signature to validate
+the protected contents.  Additionally, the MUA may use a sha-256 hash
+to validate the message and signature are meant for the recipient using
+the MUA.
 
 # Revocation
 
 There could exist any number of reasons for a receiving entity to no
-longer desire to display iconography for a given sending domain. This could
-include certificate revocation from the CA, diminished local reputation, 
-extensive abuse reports, or anything else.
+longer desire to display iconography related to a given sending domain. This
+could include certificate revocation from the CA, diminished local
+reputation, extensive abuse reports, certificate expiration, or anything
+else.
 
 In the case where this happens, the MBP (again, isp.net) can publish a NULL
 record at the location where the domain would normally match a wildcard. If
-we also use `example.net`, this may look like this:
+we also use `marketing.example.org`, this MUST appear as:
 
-example.net.sel_sign._bimi.isp.net TXT "v=BIMI1;"
+marketing.example.org.sel_sign._bimi.isp.net TXT "v=BIMI1;"
 
 The important part is that the DNS response does not include a functional
-public key that could be used to validate the signature.
+public key that could be used to validate the signature. If compared to
+the wildcard DNS entry defined earlier, there will no longer be a public
+key that can be used for validation.  The DNS record MUST contain only a
+`v` tag, and no `p` (public key) tag.
 
-This would ensure the MUA is no longer able to retrieve the public keys
-necessary to validate the signature.  In this case, it should no longer 
+This should ensure the MUA is no longer able to retrieve the public keys
+necessary to validate the signature.  In this case, the MUA MUST NOT
 utilize the headers, even though they do still exist in the stored message.
 
+See the Appendix for how this would look in practice.
+
+[Consideration: Do we care about individual 
+    selectors for the sending domain?]
+
+[Consideration: Do we care that senders can 
+    see when/if their domain has been revoked?]
+
+## Wildcard Revocation
+
+Two situations could exist here.  A MBP would like to revoke multiple
+third-level domains for a single apex domain.  Another could be that the
+MBP would like to rotate older keys.
+
+### Multi-domain Revocation
+
+In a case where the domain `example.org` sends messages as:
+
+`marketing.example.org`
+`billing.example.org`
+
+And the MBP would like to revoke for the entirety of `example.org`, a
+wildcard record could be published to match multiple:
+
+example.org.sel_sign._bimi.isp.net TXT "v=BIMI1;"
+*.example.org.sel_sign._bimi.isp.net TXT "v=BIMI1;"
+
+### Public Key Revocation/Rotation
+
+The MBP could determine that an older key needs to be retired.  In this case
+the MBP could either remove the DNS record, or continue publishing without
+a valid public key attached:
+
+sel_sign._bimi.isp.net TXT "v=BIMI1;"
+*.sel_sign._bimi.isp.net CNAME sel_sign._bimi.isp.net
+
+For any MUA attempting to validate a signature, this action SHOULD fail.  The
+MBP should rotate keys far ahead of removal of older keys so that recent
+messages are not disassociated with the imagery the MBP believes should be 
+displayed.
 
 # Security Considerations
 
 ## Key Separation
 
-The key used to sign these BIMI headers should not be shared with another
+The key used to sign these BIMI headers SHOULD NOT be shared with another
 portion of the receiving platform.
 
 ## Header Removal
 
-Any MBP receiving these headers intact should remove these and perform their
+Any MBP receiving these headers intact SHOULD remove these and perform their
 own evaluations.
+
+## DNS/Key caching
+
+Care should be taken not to cache public keys retrieved for an excessive
+amount of time.  It's presumed that the MBP has a good reason to revoke the
+display of related imagery.
 
 # Appendix A
 
-For purposes below, sending is `example.com`, MBP is `isp.net`, and selector
+For purposes below, sending is `marketing.example.org`, MBP is `isp.net`, and selector
 is `sel_sign`.
 
 ## Normal Operational Steps
@@ -212,7 +277,8 @@ is `sel_sign`.
 * MUA inspects looking for BIMI data
 * MUA sees signature
     * MUA verifies that the destination email address matches the signing domain
-    * Looks for public keys at `example.com.sel_sign._bimi.isp.net`
+    * Looks for public keys at `marketing.example.org.sel_sign._bimi.isp.net`
+    * Matches wildcard at `*.sel_sign._bimi.isp.net`
 * MUA validates signature
 * MUA displays BIMI logo as needed (list or message view)
 
@@ -236,23 +302,23 @@ is `sel_sign`.
 * MUA inspects looking for BIMI data
 * MUA sees signature
     * MUA verifies that the destination email address matches the signing domain
-    * Looks for public keys at `example.com.sel_sign._bimi.isp.net`
-    * MUA sees a value of "v=BIMI1;" or something else
-* MUA does NOT display logos for this message (the domain as a whole)
+    * Looks for public keys at `marketing.example.org.sel_sign._bimi.isp.net`
+    * MUA sees a value of "v=BIMI1;"
+* MUA does NOT display logos for this message (and the domain as a whole)
 
 ## Sample headers
 
-BIMI-Receiver-Signature: s=example.com.sel_sign;d=isp.net;p=<signature_data>
+BIMI-Receiver-Signature: s=marketing.example.org.sel_sign;d=isp.net;p=<signature_data>
 BIMI-Receiver-Information: date: Tue, 25 Oct 2022 15:14:12 +00:00 ;
   rcpt=d1bc8d3ba4afc7e109612cb73acbdddac052c93025aa1f82942edabb7deb82a1@isp.net
-BIMI-Location: v=BIMI1;a=https://bimi.example.com/bimi/evidence.pem;
-  l=https://bimi.example.com/bimi/logo.svg
+BIMI-Location: v=BIMI1;a=https://bimi.marketing.example.org/bimi/evidence.pem;
+  l=https://bimi.marketing.example.org/bimi/logo.svg
 BIMI-Indicator: <base64_SVG_Data>
-Authentication-Results: spf=pass marketing.example.com;
-  dkim=pass (signature was verified) header.d=example.com; dmarc=pass
-  header.from=example.com; bimi=pass header.d=example.com
+Authentication-Results: spf=pass marketing.marketing.example.org;
+  dkim=pass (signature was verified) header.d=marketing.example.org; dmarc=pass
+  header.from=marketing.example.org; bimi=pass header.d=marketing.example.org
   header.selector=our_selector
-DKIM-Signature: d=example.com;s=d_s;h=BIMI-Selector:From:To:Date:Message-Id;
+DKIM-Signature: d=marketing.example.org;s=d_s;h=BIMI-Selector:From:To:Date:Message-Id;
   bh=<hash_data>;b=<signature_data>
 BIMI-Selector: v=BIMI1;s=our_selector
 
