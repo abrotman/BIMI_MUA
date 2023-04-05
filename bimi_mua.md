@@ -133,9 +133,6 @@ command. By utilizing a different "namespace", this prevents this particular
 key from being used in DKIM Replay attacks. For example, an MBP named "isp.net" 
 might publish its public key at "sel_sign._local._bimi.isp.net". For the 
 purposes of this document, we will refer to "sel_sign" as the "True Selector". 
-MBPs should take care to ensure there is no collision with a declared BIMI 
-record for consumption by other entities, such as using "default" as the 
-"True Selector".
 
 The selector specified in the s= tag of this signature will be a 
 pseudo-selector constructed by prepending the FQDN domain from the 
@@ -307,7 +304,7 @@ this data may have.
 
 There exist a large number of MBPs that accept mail for multiple domains. It
 could be that there is a primary domain with some side aliases, or a large
-hosting company. These types of entities may which to explore using a DNAME
+hosting company. These types of entities may wish to explore using a DNAME
 to link the data between these various domains.  One possible solution could
 be to do something such as:
 
