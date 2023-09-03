@@ -4,8 +4,8 @@
 
 Network Working Group                                         A. Brotman
 Internet-Draft                                              Comcast, Inc
-Intended status: Standards Track                           25 March 2023
-Expires: 26 September 2023
+Intended status: Standards Track                        3 September 2023
+Expires: 6 March 2024
 
 
                        BIMI on an Independent MUA
@@ -34,7 +34,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 26 September 2023.
+   This Internet-Draft will expire on 6 March 2024.
 
 Copyright Notice
 
@@ -46,16 +46,16 @@ Copyright Notice
    license-info) in effect on the date of publication of this document.
    Please review these documents carefully, as they describe your rights
    and restrictions with respect to this document.  Code Components
-   extracted from this document must include Simplified BSD License text
-   as described in Section 4.e of the Trust Legal Provisions and are
-   provided without warranty as described in the Simplified BSD License.
+   extracted from this document must include Revised BSD License text as
+   described in Section 4.e of the Trust Legal Provisions and are
+   provided without warranty as described in the Revised BSD License.
 
 
 
 
-Brotman                 Expires 26 September 2023               [Page 1]
+Brotman                   Expires 6 March 2024                  [Page 1]
 
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
 
 
 Table of Contents
@@ -71,11 +71,17 @@ Table of Contents
        5.1.2.  Multi-selector Revocation . . . . . . . . . . . . . .   7
        5.1.3.  Public Key Revocation/Rotation  . . . . . . . . . . .   7
    6.  Security Considerations . . . . . . . . . . . . . . . . . . .   8
-     6.1.  Key Separation  . . . . . . . . . . . . . . . . . . . . .   8
-     6.2.  Header Removal  . . . . . . . . . . . . . . . . . . . . .   8
-     6.3.  DNS/Key caching . . . . . . . . . . . . . . . . . . . . .   8
-     6.4.  DNS Query Data  . . . . . . . . . . . . . . . . . . . . .   8
-   7.  Other Considerations  . . . . . . . . . . . . . . . . . . . .   8
+     6.1.  Threat Concerns . . . . . . . . . . . . . . . . . . . . .   8
+       6.1.1.  Injection of Headers to An Unaware Mailbox
+               Provider  . . . . . . . . . . . . . . . . . . . . . .   8
+       6.1.2.  IMAP Append . . . . . . . . . . . . . . . . . . . . .   8
+       6.1.3.  Signature Replay  . . . . . . . . . . . . . . . . . .   8
+       6.1.4.  Revocation  . . . . . . . . . . . . . . . . . . . . .   8
+     6.2.  Key Separation  . . . . . . . . . . . . . . . . . . . . .   8
+     6.3.  Header Removal  . . . . . . . . . . . . . . . . . . . . .   8
+     6.4.  DNS/Key caching . . . . . . . . . . . . . . . . . . . . .   9
+     6.5.  DNS Query Data  . . . . . . . . . . . . . . . . . . . . .   9
+   7.  Other Considerations  . . . . . . . . . . . . . . . . . . . .   9
      7.1.  Multi-Domain MBP  . . . . . . . . . . . . . . . . . . . .   9
    8.  Appendix A  . . . . . . . . . . . . . . . . . . . . . . . . .   9
      8.1.  Normal Operational Steps  . . . . . . . . . . . . . . . .   9
@@ -85,7 +91,7 @@ Table of Contents
    10. Notes . . . . . . . . . . . . . . . . . . . . . . . . . . . .  11
    11. References  . . . . . . . . . . . . . . . . . . . . . . . . .  11
    12. Normative References  . . . . . . . . . . . . . . . . . . . .  11
-   Author's Address  . . . . . . . . . . . . . . . . . . . . . . . .  12
+   Author's Address  . . . . . . . . . . . . . . . . . . . . . . . .  11
 
 1.  Introduction
 
@@ -95,30 +101,19 @@ Table of Contents
    display of brand-specific Indicators (e.g., logos) next to properly
    authenticated messages.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Brotman                 Expires 26 September 2023               [Page 2]
-
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
-
-
    BIMI relies on DMARC, which in turn relies on one of SPF or DKIM
    validation for the message in question, and it is generally accepted
    that an MTA is best positioned to do the SPF and DKIM validation that
    underpin DMARC since it has the access to the data necessary for such
    validation.  An MUA almost certainly cannot perform SPF validation on
+
+
+
+Brotman                   Expires 6 March 2024                  [Page 2]
+
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
+
+
    a message, as it will not know the sending IP of the message (short
    of attempting to interpret Received headers), and an MUA could only
    perform DKIM validation on a message if the MTA has not altered the
@@ -159,21 +154,21 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
 
    Additionally, a receiver employing this method MUST add another
    header to the message, BIMI-Receiver-Information.  This will contain
-   a "date-time" (from [RFC5322]), and sha256-encoded hash from the
-   local part of the recipient, and then the "domain" (From the RFC5321
-   RCPT TO command):
-
-
-
-Brotman                 Expires 26 September 2023               [Page 3]
-
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
-
+   a date-time (from [RFC5322]), and sha256-encoded hash from the local
+   part of the recipient, and then the domain (From the RFC5321 RCPT TO
+   command):
 
    BIMI-Receiver-Information: date: date-time ; rcpt: sha256-local @
    domain
 
    date-time: RFC5322
+
+
+
+Brotman                   Expires 6 March 2024                  [Page 3]
+
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
+
 
    domain: RFC5321
 
@@ -218,18 +213,18 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
    "_bimi.signingDomain", where "signingDomain" is the domain associated
    with the address in the RCPT TO command.  By utilizing a different
    "namespace", this prevents this particular key from being used in
-
-
-
-Brotman                 Expires 26 September 2023               [Page 4]
-
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
-
-
    DKIM Replay attacks.  For example, an MBP named "isp.net" might
    publish its public key at "sel_sign._local._bimi.isp.net".  For the
    purposes of this document, we will refer to "sel_sign" as the "True
    Selector".
+
+
+
+
+Brotman                   Expires 6 March 2024                  [Page 4]
+
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
+
 
    The selector specified in the s= tag of this signature will be a
    pseudo-selector constructed by prepending the FQDN domain from the
@@ -251,7 +246,7 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
 
    The public key used for validation by the MUA would be:
 
-   "marketing.example.org.sel_sign._local._bimi.isp.net"
+   marketing.example.org.sel_sign._local._bimi.isp.net
 
    The mechanics of the public key publishing are covered in sections
    below.
@@ -273,19 +268,19 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
 
    <True Selector>._local._bimi.<signing Domain>
 
-
-
-
-
-Brotman                 Expires 26 September 2023               [Page 5]
-
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
-
-
    In the example above that would mean publishing a DKIM public key as
    follows:
 
    sel_sign._local._bimi.isp.net TXT "v=BIMI1; p=<public_key_data>"
+
+
+
+
+
+Brotman                   Expires 6 March 2024                  [Page 5]
+
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
+
 
    To support validation of its signatures where the selector is the
    "pseudo-selector" described in the previous section, the MBP will
@@ -317,33 +312,31 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
    In the case where this happens, the MBP (again, isp.net) can publish
    a NULL record at the location where the domain would normally match a
    wildcard.  The MBP may optionally choose to include a string as to
-   the reason for revocation by utilizing the "r" tag in the record.  If
-   we also use "marketing.example.org" with a selector of "foo", this
-   MUST appear as:
+   the reason for revocation by utilizing the r tag in the record.  If
+   we also use marketing.example.org with a selector of "foo", this MUST
+   appear as:
 
    foo._s.marketing.example.org.sel_sign._local._bimi.isp.net TXT
    'v=BIMI1;' foo._s.marketing.example.org.sel_sign._local._bimi.isp.net
    TXT 'v=BIMI1;"r=Reason String;"'
 
-
-
-
-
-
-
-
-
-Brotman                 Expires 26 September 2023               [Page 6]
-
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
-
-
    The DNS response MUST not include a functional public key that could
    be used to validate the signature.  If compared to the wildcard DNS
    entry defined earlier, there will no longer be a public key that can
-   be used for validation.  The DNS record MUST contain only a "v" tag,
-   MAY contain an optional "r" tag, and MUST NOT contain a "p" (public
-   key) tag.
+   be used for validation.  The DNS record MUST contain only a v tag,
+   MAY contain an optional r tag, and MUST NOT contain a p (public key)
+   tag.
+
+
+
+
+
+
+
+Brotman                   Expires 6 March 2024                  [Page 6]
+
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
+
 
    This should ensure the MUA is no longer able to retrieve the public
    keys necessary to validate the signature.  In this case, the MUA MUST
@@ -360,12 +353,12 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
 
 5.1.1.  Multi-domain Revocation
 
-   In a case where the domain "example.org" sends messages as:
+   In a case where the domain example.org sends messages as:
 
-   "marketing.example.org"
-   "billing.example.org"
+   marketing.example.org
+   billing.example.org
 
-   And the MBP would like to revoke for the entirety of "example.org", a
+   And the MBP would like to revoke for the entirety of example.org, a
    wildcard record could be published to match multiple:
 
    example.org.sel_sign._local._bimi.isp.net TXT 'v=BIMI1;'
@@ -385,15 +378,6 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
    this case the MBP could either remove the DNS record, or continue
    publishing without a valid public key attached:
 
-
-
-
-
-Brotman                 Expires 26 September 2023               [Page 7]
-
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
-
-
    sel_sign._local._bimi.isp.net TXT 'v=BIMI1;'
    *.sel_sign._local._bimi.isp.net CNAME sel_sign._bimi.isp.net
 
@@ -401,6 +385,14 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
    fail.  The MBP should rotate keys far ahead of removal of older keys
    so that recent messages are not disassociated with the imagery the
    MBP believes should be displayed.
+
+
+
+
+Brotman                   Expires 6 March 2024                  [Page 7]
+
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
+
 
    An MUA SHOULD check for revocation daily or upon receipt of the first
    message for a domain.  If the MUA does not intend to display the logo
@@ -410,12 +402,35 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
 
 6.  Security Considerations
 
-6.1.  Key Separation
+6.1.  Threat Concerns
+
+   There are a number of concerns relating to how an independent MUA may
+   use some of this information, or more important, how an attacker may
+   attempt to cause an MUA to improperly display iconography for a user.
+   This document is attempting to address these potential attacks.
+
+6.1.1.  Injection of Headers to An Unaware Mailbox Provider
+
+   An attacker could attempt to inject a message via normal SMTP
+   methods, howver, the message would contain headers that the MUA may
+   believe were added by the receiving Mailbox Provider.
+
+6.1.2.  IMAP Append
+
+   An attacker could insert messages into a mail store via IMAP
+   commands, and given a reasonable set of information points could
+   induce an MUA to display a logo.
+
+6.1.3.  Signature Replay
+
+6.1.4.  Revocation
+
+6.2.  Key Separation
 
    The key used to sign these BIMI headers MUST NOT be shared with
    another portion of the receiving platform.
 
-6.2.  Header Removal
+6.3.  Header Removal
 
    Any MBP receiving these headers intact SHOULD remove these and
    perform their own evaluations.
@@ -423,7 +438,19 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
    NOTE: Ensure that core document specifies the same for BIMI-related
    headers
 
-6.3.  DNS/Key caching
+
+
+
+
+
+
+
+Brotman                   Expires 6 March 2024                  [Page 8]
+
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
+
+
+6.4.  DNS/Key caching
 
    Care should be taken not to cache public keys retrieved for an
    excessive amount of time.  It's presumed that the MBP has a good
@@ -431,7 +458,7 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
 
    NOTE: Require MUA only retain data for TTL duration?
 
-6.4.  DNS Query Data
+6.5.  DNS Query Data
 
    If the MUA queries DNS each time a message is loaded, it's
    conceivable that the DNS server owner could correlate some
@@ -439,16 +466,6 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
    be tied to a specific user, or what value this data may have.
 
 7.  Other Considerations
-
-
-
-
-
-
-Brotman                 Expires 26 September 2023               [Page 8]
-
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
-
 
 7.1.  Multi-Domain MBP
 
@@ -465,123 +482,85 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
 
 8.  Appendix A
 
-   For purposes below, sending is "marketing.example.org", MBP is
-   "isp.net", and selector is "sel_sign".
+   For purposes below, sending is marketing.example.org, MBP is isp.net,
+   and selector is sel_sign.
 
 8.1.  Normal Operational Steps
 
    *  ESP sends message to MBP containing appropriate headers for BIMI
       usage
-
    *  MBP performs DKIM/SPF/DMARC steps
-
    *  Presuming prior step works properly, MBP evaluates BIMI
-
    *  Based on localized requirements, MBP adds headers to email
-
       -  BIMI-Location
-
       -  BIMI-Indicator
-
    *  MBP additionally adds header specified in this document
-
       -  BIMI-Receiver-Information
+      -  Includes time of receipt, sha256 of local rcpt, and the
+         "@isp.net" portion
 
-         o  Includes time of receipt, sha256 of local rcpt, and the
-            "@isp.net" portion
+
+
+Brotman                   Expires 6 March 2024                  [Page 9]
+
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
+
 
    *  MBP signs all three headers using DKIM-style cryptography
-
       -  Adds new header containing hash, as well as s/d attributes
-
    *  ...
-
    *  MBP stores message in platform
-
-
-
-
-Brotman                 Expires 26 September 2023               [Page 9]
-
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
-
-
    *  MUA retrieves message from message store
-
    *  User opens message or MUA uses data during list view
-
    *  MUA inspects looking for BIMI data
-
    *  MUA sees signature
-
       -  MUA verifies that the destination email address matches the
          signing domain
-
       -  Looks for public keys at
-         "marketing.example.org.sel_sign._local._bimi.isp.net"
-
-      -  Matches wildcard at "*.sel_sign._local._bimi.isp.net"
-
+         marketing.example.org.sel_sign._local._bimi.isp.net
+      -  Matches wildcard at *.sel_sign._local._bimi.isp.net
    *  MUA validates signature
-
    *  MUA displays BIMI logo as needed (list or message view)
 
 8.2.  Revoked Operational Steps
 
    *  ESP sends message to MBP containing appropriate headers for BIMI
       usage
-
    *  MBP performs DKIM/SPF/DMARC steps
-
    *  Presuming prior step works properly, MBP evaluates BIMI
-
    *  Based on localized requirements, MBP adds headers to email
-
       -  BIMI-Location
-
       -  BIMI-Indicator
-
    *  MBP additionally adds header specified in this document
-
       -  BIMI-Receiver-Information
-
-         o  Includes time of receipt, sha256 of local rcpt, and the
-            "@isp.net" portion
-
+      -  Includes time of receipt, sha256 of local rcpt, and the
+         "@isp.net" portion
    *  MBP signs all three headers using DKIM-style cryptography
-
       -  Adds new header containing hash, as well as s/d attributes
-
    *  ...
-
-
-
-
-Brotman                 Expires 26 September 2023              [Page 10]
-
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
-
-
    *  MBP stores message in platform
-
    *  MUA retrieves message from message store
-
    *  User opens message or MUA uses data during list view
-
    *  MUA inspects looking for BIMI data
-
    *  MUA sees signature
-
       -  MUA verifies that the destination email address matches the
          signing domain
-
       -  Looks for public keys at
-         "selector.marketing.example.org.sel_sign._local._bimi.isp.net"
-
+         selector.marketing.example.org.sel_sign._local._bimi.isp.net
       -  MUA sees a value of "v=BIMI1;"
-
    *  MUA does NOT display logos for this message (and the domain as a
       whole)
+
+
+
+
+
+
+
+Brotman                   Expires 6 March 2024                 [Page 10]
+
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
+
 
 8.3.  Sample headers
 
@@ -610,14 +589,6 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
 
 12.  Normative References
 
-
-
-
-Brotman                 Expires 26 September 2023              [Page 11]
-
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                      March 2023
-
-
    [RFC5322]  Resnick, P., Ed., "Internet Message Format", RFC 5322,
               DOI 10.17487/RFC5322, October 2008,
               <https://www.rfc-editor.org/info/rfc5322>.
@@ -631,7 +602,6 @@ Author's Address
 
    Alex Brotman
    Comcast, Inc
-
    Email: alex_brotman@comcast.com
 
 
@@ -643,30 +613,4 @@ Author's Address
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Brotman                 Expires 26 September 2023              [Page 12]
+Brotman                   Expires 6 March 2024                 [Page 11]

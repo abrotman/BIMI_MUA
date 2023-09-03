@@ -8,7 +8,7 @@ area = "Applications"
 workgroup = ""
 keyword = [""]
 
-date = 2023-03-25T00:00:00Z
+date = 2023-09-03T00:00:00Z
 
 [seriesInfo]
 name="RFC"
@@ -271,6 +271,32 @@ displays the logo when the message is opened (vs in the "list view").
 
 # Security Considerations
 
+## Threat Concerns
+
+There are a number of concerns relating to how an independent MUA may use
+some of this information, or more important, how an attacker may attempt
+to cause an MUA to improperly display iconography for a user.  This 
+document is attempting to address these potential attacks.
+
+### Injection of Headers to An Unaware Mailbox Provider
+
+An attacker could attempt to inject a message via normal SMTP methods,
+howver, the message would contain headers that the MUA may believe
+were added by the receiving Mailbox Provider.
+
+### IMAP Append
+
+An attacker could insert messages into a mail store via IMAP commands,
+and given a reasonable set of information points could induce an MUA
+to display a logo.
+
+### Signature Replay
+
+### Revocation
+
+
+
+
 ## Key Separation
 
 The key used to sign these BIMI headers MUST NOT be shared with another
@@ -328,7 +354,7 @@ selector is `sel_sign`.
    * BIMI-Indicator
 * MBP additionally adds header specified in this document
    * BIMI-Receiver-Information
-       * Includes time of receipt, sha256 of local rcpt, and the "@isp.net" portion
+   * Includes time of receipt, sha256 of local rcpt, and the "@isp.net" portion
 * MBP signs all three headers using DKIM-style cryptography
    * Adds new header containing hash, as well as s/d attributes
 * ...
@@ -353,7 +379,7 @@ selector is `sel_sign`.
    * BIMI-Indicator
 * MBP additionally adds header specified in this document
    * BIMI-Receiver-Information
-       * Includes time of receipt, sha256 of local rcpt, and the "@isp.net" portion
+   * Includes time of receipt, sha256 of local rcpt, and the "@isp.net" portion
 * MBP signs all three headers using DKIM-style cryptography
    * Adds new header containing hash, as well as s/d attributes
 * ...
