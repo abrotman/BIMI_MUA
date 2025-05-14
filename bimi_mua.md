@@ -8,7 +8,7 @@ area = "Applications"
 workgroup = ""
 keyword = [""]
 
-date = 2023-09-03T00:00:00Z
+date = 2025-05-14T00:00:00Z
 
 [seriesInfo]
 name="RFC"
@@ -281,7 +281,7 @@ document is attempting to address these potential attacks.
 ### Injection of Headers to An Unaware Mailbox Provider
 
 An attacker could attempt to inject a message via normal SMTP methods,
-howver, the message would contain headers that the MUA may believe
+however, the message would contain headers that the MUA may believe
 were added by the receiving Mailbox Provider.
 
 ### IMAP Append

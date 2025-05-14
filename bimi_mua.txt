@@ -4,8 +4,8 @@
 
 Network Working Group                                         A. Brotman
 Internet-Draft                                              Comcast, Inc
-Intended status: Standards Track                        3 September 2023
-Expires: 6 March 2024
+Intended status: Standards Track                             14 May 2025
+Expires: 15 November 2025
 
 
                        BIMI on an Independent MUA
@@ -34,11 +34,11 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 6 March 2024.
+   This Internet-Draft will expire on 15 November 2025.
 
 Copyright Notice
 
-   Copyright (c) 2023 IETF Trust and the persons identified as the
+   Copyright (c) 2025 IETF Trust and the persons identified as the
    document authors.  All rights reserved.
 
    This document is subject to BCP 78 and the IETF Trust's Legal
@@ -53,9 +53,9 @@ Copyright Notice
 
 
 
-Brotman                   Expires 6 March 2024                  [Page 1]
+Brotman                 Expires 15 November 2025                [Page 1]
 
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                        May 2025
 
 
 Table of Contents
@@ -109,9 +109,9 @@ Table of Contents
 
 
 
-Brotman                   Expires 6 March 2024                  [Page 2]
+Brotman                 Expires 15 November 2025                [Page 2]
 
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                        May 2025
 
 
    a message, as it will not know the sending IP of the message (short
@@ -165,9 +165,9 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
 
 
 
-Brotman                   Expires 6 March 2024                  [Page 3]
+Brotman                 Expires 15 November 2025                [Page 3]
 
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                        May 2025
 
 
    domain: RFC5321
@@ -221,9 +221,9 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
 
 
 
-Brotman                   Expires 6 March 2024                  [Page 4]
+Brotman                 Expires 15 November 2025                [Page 4]
 
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                        May 2025
 
 
    The selector specified in the s= tag of this signature will be a
@@ -277,9 +277,9 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
 
 
 
-Brotman                   Expires 6 March 2024                  [Page 5]
+Brotman                 Expires 15 November 2025                [Page 5]
 
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                        May 2025
 
 
    To support validation of its signatures where the selector is the
@@ -333,9 +333,9 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
 
 
 
-Brotman                   Expires 6 March 2024                  [Page 6]
+Brotman                 Expires 15 November 2025                [Page 6]
 
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                        May 2025
 
 
    This should ensure the MUA is no longer able to retrieve the public
@@ -389,9 +389,9 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
 
 
 
-Brotman                   Expires 6 March 2024                  [Page 7]
+Brotman                 Expires 15 November 2025                [Page 7]
 
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                        May 2025
 
 
    An MUA SHOULD check for revocation daily or upon receipt of the first
@@ -412,7 +412,7 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
 6.1.1.  Injection of Headers to An Unaware Mailbox Provider
 
    An attacker could attempt to inject a message via normal SMTP
-   methods, howver, the message would contain headers that the MUA may
+   methods, however, the message would contain headers that the MUA may
    believe were added by the receiving Mailbox Provider.
 
 6.1.2.  IMAP Append
@@ -445,9 +445,9 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
 
 
 
-Brotman                   Expires 6 March 2024                  [Page 8]
+Brotman                 Expires 15 November 2025                [Page 8]
 
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                        May 2025
 
 
 6.4.  DNS/Key caching
@@ -501,9 +501,9 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
 
 
 
-Brotman                   Expires 6 March 2024                  [Page 9]
+Brotman                 Expires 15 November 2025                [Page 9]
 
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                        May 2025
 
 
    *  MBP signs all three headers using DKIM-style cryptography
@@ -557,9 +557,9 @@ RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
 
 
 
-Brotman                   Expires 6 March 2024                 [Page 10]
+Brotman                 Expires 15 November 2025               [Page 10]
 
-RFC draft-brotman-bimi-mua-00   BIMI-MUA                  September 2023
+RFC draft-brotman-bimi-mua-00   BIMI-MUA                        May 2025
 
 
 8.3.  Sample headers
@@ -613,4 +613,4 @@ Author's Address
 
 
 
-Brotman                   Expires 6 March 2024                 [Page 11]
+Brotman                 Expires 15 November 2025               [Page 11]
